@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\UdaraService;
 use Illuminate\Http\Request;
+use App\Services\TitikPanasService;
 
 class UdaraController extends Controller
 {
@@ -29,4 +30,16 @@ class UdaraController extends Controller
 
         return response()->json($data);
     }
+
+    // GET /api/titik-panas
+    public function titikPanas(TitikPanasService $titikPanas)
+{
+    $data = $titikPanas->ambil();
+
+    if ($data === null) {
+        return response()->json(['error' => 'Data titik panas belum tersedia'], 503);
+    }
+
+    return response()->json($data);
+}
 }

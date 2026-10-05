@@ -8,3 +8,5 @@ Route::get('/', function () {
 });
 
 Route::get('/api/udara', [UdaraController::class, 'udara']);
+
+Route::get('/api/titik-panas', [UdaraController::class, 'titikPanas']);
