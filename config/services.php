@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'firms' => [
+    'key' => env('FIRMS_MAP_KEY'),
+    ],
+
 ];
