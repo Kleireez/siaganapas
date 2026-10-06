@@ -36,6 +36,18 @@ class HomeController extends Controller
         $titik = $panasSvc->dekatDari($lat, $lon); // null = gagal, [] = tidak ada titik
         $tren = $udaraSvc->tren($lat, $lon);
         $terdekat = $titik[0] ?? null;
+        $perJam = $tren['per_jam'] ?? [];
+        $jamIni = (int) now('Asia/Jakarta')->format('G');
+        $terbaik = collect($perJam)->filter(fn ($j) => (int) $j['jam'] >= $jamIni)->sortBy('aqi')->first();
+        $waktuTerbaik = ($terbaik && $terbaik['aqi'] <= $udara['aqi'] - 20) ? $terbaik : null;
+        $sisa = collect($tren['per_jam'] ?? [])->filter(fn ($j) => (int) $j['jam'] >= $jamIni);
+        $puncak = $sisa->max('aqi');
+
+        $kecenderungan = match (true) {
+            $waktuTerbaik !== null => 'membaik',
+            $puncak !== null && $puncak >= $udara['aqi'] + 10 => 'memburuk',
+            default => 'stabil',
+        };
 
         return view('home', [
             'daftarKota' => $daftar,
@@ -49,6 +61,8 @@ class HomeController extends Controller
             'terdekat' => $terdekat,
             'prakiraan' => $tren['harian'] ?? [],           // ['2026-10-07' => 138, ...]
             'perJam' => $tren['per_jam'] ?? [],          // [['jam' => '08', 'aqi' => 152], ...]
+            'waktuTerbaik' => $waktuTerbaik,
+            'kecenderungan' => $kecenderungan,
             'saran' => $offline
                 ? $ai->aturan($udara['aqi'], $terdekat)
                 : $ai->saran($kota, $udara, $cuaca, $terdekat),
