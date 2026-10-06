@@ -36,7 +36,16 @@ return [
     ],
 
     'firms' => [
-    'key' => env('FIRMS_MAP_KEY'),
+        'key' => env('FIRMS_MAP_KEY'),
+    ],
+
+    'anthropic' => [
+        'key' => env('ANTHROPIC_API_KEY'),
+    ],
+
+    'gemini' => [
+        'key' => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_MODEL', 'gemini-3.5-flash-lite'),
     ],
 
 ];
