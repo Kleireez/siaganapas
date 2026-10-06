@@ -2,15 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\TitikPanasService;
 use App\Services\UdaraService;
 use Illuminate\Http\Request;
-use App\Services\TitikPanasService;
 
 class UdaraController extends Controller
 {
-    public function __construct(private UdaraService $udara)
-    {
-    }
+    public function __construct(private UdaraService $udara) {}
 
     // GET /api/udara?lat=0.5071&lon=101.4478
     public function udara(Request $request)
@@ -24,7 +22,7 @@ class UdaraController extends Controller
 
         $data = $this->udara->ambil($lat, $lon);
 
-        if (!$data) {
+        if (! $data) {
             return response()->json(['error' => 'Data udara belum tersedia'], 503);
         }
 
@@ -33,13 +31,13 @@ class UdaraController extends Controller
 
     // GET /api/titik-panas
     public function titikPanas(TitikPanasService $titikPanas)
-{
-    $data = $titikPanas->ambil();
+    {
+        $data = $titikPanas->ambil();
 
-    if ($data === null) {
-        return response()->json(['error' => 'Data titik panas belum tersedia'], 503);
+        if ($data === null) {
+            return response()->json(['error' => 'Data titik panas belum tersedia'], 503);
+        }
+
+        return response()->json($data);
     }
-
-    return response()->json($data);
-}
 }
