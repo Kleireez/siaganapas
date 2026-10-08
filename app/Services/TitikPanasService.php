@@ -25,78 +25,116 @@ class TitikPanasService
      */
     public function ambil(): ?array
     {
-        return Cache::remember('titik_panas_riau_v3', 900, function () {
-            $key = config('services.firms.key');
+        $kunci = 'titik_panas_riau_v3';
 
-            if (! $key) {
-                Log::error('FIRMS_MAP_KEY belum diisi di .env');
+        // 1) Masih segar di cache
+        $ada = Cache::get($kunci);
+        if ($ada !== null) {
+            return $ada;
+        }
 
-                return null;
+        // 2) API baru saja gagal: jangan coba lagi tiap kunjungan (jeda 2 menit)
+        if (Cache::has($kunci.'_gagal')) {
+            return $this->terakhir($kunci);
+        }
+
+        // 3) Ambil dari NASA FIRMS
+        $data = $this->panggil();
+
+        if ($data !== null) {
+            Cache::put($kunci, $data, 900);
+            Cache::forever($kunci.'_terakhir', ['at' => time(), 'data' => $data]);
+
+            return $data;
+        }
+
+        Cache::put($kunci.'_gagal', true, 120);
+
+        return $this->terakhir($kunci);
+    }
+
+    // Data sukses terakhir, hanya dipakai kalau umurnya maksimal 6 jam.
+    // Lebih lama dari itu dianggap gagal (null), supaya tidak tampil "tidak ada titik panas" secara keliru.
+    private function terakhir(string $kunci): ?array
+    {
+        $t = Cache::get($kunci.'_terakhir');
+
+        return ($t && (time() - $t['at']) <= 21600) ? $t['data'] : null;
+    }
+
+    private function panggil(): ?array
+    {
+        $key = config('services.firms.key');
+
+        if (! $key) {
+            Log::error('FIRMS_MAP_KEY belum diisi di .env');
+
+            return null;
+        }
+
+        $url = 'https://firms.modaps.eosdis.nasa.gov/api/area/csv/'
+            .$key.'/'.self::SUMBER.'/'.self::AREA.'/'.self::HARI;
+
+        try {
+            $res = Http::timeout(10)->connectTimeout(3)->get($url);
+        } catch (\Throwable $e) {
+            // Pesan error bisa memuat URL beserta key, jadi key disamarkan
+            Log::error('FIRMS gagal: '.str_replace($key, '***', $e->getMessage()));
+
+            return null;
+        }
+
+        if (! $res->successful()) {
+            Log::error('FIRMS status '.$res->status());
+
+            return null;
+        }
+
+        $baris = preg_split('/\r\n|\r|\n/', trim($res->body()));
+        $header = str_getcsv(array_shift($baris));
+
+        // Kalau bukan CSV yang benar (misalnya pesan "invalid key"), anggap gagal
+        if (! in_array('latitude', $header, true) || ! in_array('longitude', $header, true)) {
+            Log::error('FIRMS balasan tidak dikenal: '.substr($res->body(), 0, 100));
+
+            return null;
+        }
+
+        $hasil = [];
+        foreach ($baris as $b) {
+            if ($b === '') {
+                continue;
             }
-
-            $url = 'https://firms.modaps.eosdis.nasa.gov/api/area/csv/'
-                .$key.'/'.self::SUMBER.'/'.self::AREA.'/'.self::HARI;
-
-            try {
-                $res = Http::timeout(20)->get($url);
-            } catch (\Throwable $e) {
-                // Pesan error bisa memuat URL beserta key, jadi key disamarkan
-                Log::error('FIRMS gagal: '.str_replace($key, '***', $e->getMessage()));
-
-                return null;
+            $nilai = str_getcsv($b);
+            if (count($nilai) !== count($header)) {
+                continue;
             }
+            $t = array_combine($header, $nilai);
 
-            if (! $res->successful()) {
-                Log::error('FIRMS status '.$res->status());
+            $lat = (float) $t['latitude'];
+            $lon = (float) $t['longitude'];
 
-                return null;
-            }
+            $jam = str_pad($t['acq_time'] ?? '0', 4, '0', STR_PAD_LEFT);
+            $ts = Carbon::parse(
+                ($t['acq_date'] ?? '1970-01-01').' '.substr($jam, 0, 2).':'.substr($jam, 2, 2),
+                'UTC'
+            )->timestamp;
+            $wib = Carbon::createFromTimestamp($ts, 'Asia/Jakarta');
 
-            $baris = preg_split('/\r\n|\r|\n/', trim($res->body()));
-            $header = str_getcsv(array_shift($baris));
+            $hasil[] = [
+                'latitude' => $lat,
+                'longitude' => $lon,
+                'confidence' => $this->keyakinan($t['confidence'] ?? ''),
+                'frp' => (float) ($t['frp'] ?? 0),
+                'location' => $this->wilayah($lat, $lon),
+                'timestamp' => $ts,
+                'datetime' => $wib->format('Y-m-d H:i:s'),
+                'time_label' => $wib->format('H.i').' WIB',
+            ];
+        }
 
-            // Kalau bukan CSV yang benar (misalnya pesan "invalid key"), anggap gagal
-            if (! in_array('latitude', $header, true) || ! in_array('longitude', $header, true)) {
-                Log::error('FIRMS balasan tidak dikenal: '.substr($res->body(), 0, 100));
+        return $hasil;
 
-                return null;
-            }
-
-            $hasil = [];
-            foreach ($baris as $b) {
-                if ($b === '') {
-                    continue;
-                }
-                $nilai = str_getcsv($b);
-                if (count($nilai) !== count($header)) {
-                    continue;
-                }
-                $t = array_combine($header, $nilai);
-
-                $lat = (float) $t['latitude'];
-                $lon = (float) $t['longitude'];
-
-                $jam = str_pad($t['acq_time'] ?? '0', 4, '0', STR_PAD_LEFT);
-                $ts = Carbon::parse(
-                    ($t['acq_date'] ?? '1970-01-01').' '.substr($jam, 0, 2).':'.substr($jam, 2, 2),
-                    'UTC'
-                )->timestamp;
-                $wib = Carbon::createFromTimestamp($ts, 'Asia/Jakarta');
-
-                $hasil[] = [
-                    'latitude' => $lat,
-                    'longitude' => $lon,
-                    'confidence' => $this->keyakinan($t['confidence'] ?? ''),
-                    'frp' => (float) ($t['frp'] ?? 0),
-                    'location' => $this->wilayah($lat, $lon),
-                    'timestamp' => $ts,
-                    'datetime' => $wib->format('Y-m-d H:i:s'),
-                    'time_label' => $wib->format('H.i').' WIB',
-                ];
-            }
-
-            return $hasil;
-        });
     }
 
     /**
