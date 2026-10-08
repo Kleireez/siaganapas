@@ -6,6 +6,7 @@ use App\Services\CuacaService;
 use App\Services\RecommendationService;
 use App\Services\TitikPanasService;
 use App\Services\UdaraService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class HomeController extends Controller
@@ -22,61 +23,99 @@ class HomeController extends Controller
         abort_unless(isset($daftar[$kota]), 404);
         session(['kota' => $kota]);
 
-        $lat = $daftar[$kota]['lat'];
-        $lon = $daftar[$kota]['lon'];
+        $infoKota = $daftar[$kota] + ['key' => $kota];
+        $lat = $infoKota['lat'];
+        $lon = $infoKota['lon'];
 
+        // 1) Ambil data dari service (null = API gagal dan belum ada data tersimpan)
         $udara = $udaraSvc->ambil($lat, $lon);
         $cuaca = $cuacaSvc->ambil($lat, $lon);
+        $prakiraanCuaca = $cuacaSvc->prakiraan($lat, $lon);
+        $titik = $panasSvc->dekatDari($lat, $lon);
+        $trenData = $udaraSvc->tren($lat, $lon);
 
-        // Kalau API gagal dan belum ada data tersimpan, tampilkan data contoh + penanda
-        $offline = ! $udara || ! $cuaca;
-        $udara ??= $this->udaraContoh();
-        $cuaca ??= $this->cuacaContoh();
+        $statusApi = [
+            'udara' => $udara !== null,
+            'cuaca' => $cuaca !== null,
+            'titik_panas' => $titik !== null,
+            'tren' => $trenData !== null,
+        ];
 
-        $titik = $panasSvc->dekatDari($lat, $lon); // null = gagal, [] = tidak ada titik
-        $tren = $udaraSvc->tren($lat, $lon);
+        // 2) Data utama (udara/cuaca) gagal total -> data contoh + penanda offline
+        $offline = ! $statusApi['udara'] || ! $statusApi['cuaca'];
+        $udara ??= $udaraSvc->contoh();
+        $cuaca ??= $cuacaSvc->contoh();
+        $titik ??= [];
+
+        $tren = $trenData['per_jam'] ?? [];
+        $ringkasan = $udaraSvc->ringkasan($tren, $udara['aqi']);
         $terdekat = $titik[0] ?? null;
-        $perJam = $tren['per_jam'] ?? [];
-        $jamIni = (int) now('Asia/Jakarta')->format('G');
-        $terbaik = collect($perJam)->filter(fn ($j) => (int) $j['jam'] >= $jamIni)->sortBy('aqi')->first();
-        $waktuTerbaik = ($terbaik && $terbaik['aqi'] <= $udara['aqi'] - 20) ? $terbaik : null;
-        $sisa = collect($tren['per_jam'] ?? [])->filter(fn ($j) => (int) $j['jam'] >= $jamIni);
-        $puncak = $sisa->max('aqi');
-
-        $kecenderungan = match (true) {
-            $waktuTerbaik !== null => 'membaik',
-            $puncak !== null && $puncak >= $udara['aqi'] + 10 => 'memburuk',
-            default => 'stabil',
-        };
 
         return view('home', [
-            'daftarKota' => $daftar,
             'kota' => $kota,
-            'infoKota' => $daftar[$kota],
-            'udara' => $udara,                          // aqi, pm25, pm10, kategori, waktu
-            'level' => $udaraSvc->level($udara['aqi']), // [label, warna angka, warna lencana]
-            'cuaca' => $cuaca,                          // suhu, terasa, lembap, angin, arah, jarak_pandang
-            'titik' => $titik ?? [],                    // lat, lon, keyakinan, frp, jarak_km, jam_wib
-            'jumlahTitik' => count($titik ?? []),
-            'terdekat' => $terdekat,
-            'prakiraan' => $tren['harian'] ?? [],           // ['2026-10-07' => 138, ...]
-            'perJam' => $tren['per_jam'] ?? [],          // [['jam' => '08', 'aqi' => 152], ...]
-            'waktuTerbaik' => $waktuTerbaik,
-            'kecenderungan' => $kecenderungan,
-            'saran' => $offline
-                ? $ai->aturan($udara['aqi'], $terdekat)
-                : $ai->saran($kota, $udara, $cuaca, $terdekat),
+            'infoKota' => $infoKota,       // nama, jenis, lat, lon, key
+            'daftarKota' => $daftar,
+            'tanggalHariIni' => now('Asia/Jakarta')->locale('id')->translatedFormat('l, j F Y'),
+            'updatedAt' => $this->label($udara['updated_at']),
             'offline' => $offline,
+            'statusApi' => $statusApi,
+
+            'udara' => $udara,
+            'cuaca' => $cuaca,
+
+            'titik' => $titik,
+            'jumlahTitik' => count($titik),
+            'terdekat' => $terdekat,
+            'titikTerbaru' => $titik ? $this->label(max(array_column($titik, 'datetime'))) : null,
+
+            'tren' => $tren,           // [['time' => '08:00', 'aqi' => 152, 'is_now' => true], ...]
+            'ringkasan' => $ringkasan,      // terburuk, terbaik, waktu_terbaik, kecenderungan
+            'prakiraan' => $this->gabungPrakiraan($prakiraanCuaca ?? [], $trenData['harian'] ?? [], $udaraSvc),
+
+            'saran' => $offline
+                ? $ai->aturan($udara['aqi'], $terdekat, $cuaca, $ringkasan)
+                : $ai->saran($kota, $udara, $cuaca, $terdekat, $ringkasan),
+            'judulSaran' => $ai->judul($udara['aqi']),
+            'alasanSaran' => $ai->alasan($udara, $ringkasan),
         ]);
     }
 
-    private function udaraContoh(): array
+    // "08 Oktober 2026 · 07.45 WIB"
+    private function label(?string $waktu): ?string
     {
-        return ['aqi' => 152, 'pm25' => 58.0, 'pm10' => 70.0, 'kategori' => 'Tidak Sehat', 'waktu' => null];
+        if (! $waktu) {
+            return null;
+        }
+        $c = Carbon::parse($waktu, 'Asia/Jakarta')->locale('id');
+
+        return $c->translatedFormat('d F Y').' · '.$c->format('H.i').' WIB';
     }
 
-    private function cuacaContoh(): array
+    // Gabungkan prakiraan cuaca (suhu, kondisi) dengan rata-rata AQI harian
+    private function gabungPrakiraan(array $cuacaHarian, array $aqiHarian, UdaraService $udaraSvc): array
     {
-        return ['suhu' => 33, 'terasa' => 38, 'lembap' => 64, 'angin' => 9, 'arah' => 'timur laut', 'jarak_pandang' => 3.0];
+        $peta = [];
+        foreach ($cuacaHarian as $c) {
+            $peta[$c['date']] = $c;
+        }
+
+        $tanggal = $peta ? array_keys($peta) : array_keys($aqiHarian);
+        $hasil = [];
+
+        foreach ($tanggal as $tgl) {
+            $aqi = $aqiHarian[$tgl] ?? null;
+            $hasil[] = [
+                'date' => $tgl,
+                'day_label' => $peta[$tgl]['day_label'] ?? Carbon::parse($tgl, 'Asia/Jakarta')->locale('id')->translatedFormat('l, j M'),
+                'condition' => $peta[$tgl]['condition'] ?? null,
+                'temp_max' => $peta[$tgl]['temp_max'] ?? null,
+                'temp_min' => $peta[$tgl]['temp_min'] ?? null,
+                'aqi' => $aqi,
+                'aqi_level' => $udaraSvc->levelAqi($aqi),
+                'aqi_level_key' => $udaraSvc->levelKey($aqi),
+            ];
+        }
+
+        return $hasil;
     }
 }

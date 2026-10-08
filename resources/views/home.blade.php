@@ -1,1 +1,1 @@
-<pre>{{ json_encode(compact('udara','level','cuaca','jumlahTitik','terdekat','prakiraan','perJam','waktuTerbaik','kecenderungan','saran','offline'), JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE) }}</pre>
+<pre>{{ json_encode(compact('offline','statusApi','udara','cuaca','jumlahTitik','terdekat','tren','ringkasan','prakiraan','saran','judulSaran','alasanSaran','updatedAt'), JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE) }}</pre>
