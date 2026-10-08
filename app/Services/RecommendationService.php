@@ -33,6 +33,11 @@ class RecommendationService
             return $ada;
         }
 
+        // AI baru saja gagal: langsung pakai saran aturan, jangan menunggu timeout lagi (jeda 5 menit)
+        if (Cache::has('saran_ai_gagal')) {
+            return $cadangan;
+        }
+
         $prompt = $this->buatPrompt($udara, $cuaca, $terdekat, $ringkasan);
         $teks = $gemini ? $this->tanyaGemini($gemini, $prompt) : $this->tanyaClaude($claude, $prompt);
 
@@ -41,6 +46,8 @@ class RecommendationService
 
             return $teks;
         }
+
+        Cache::put('saran_ai_gagal', true, 300);
 
         return $cadangan;
     }
@@ -126,7 +133,7 @@ class RecommendationService
         }
 
         $data .= $terdekat
-            ? "Titik panas terdekat {$terdekat['distance']} km ke arah {$terdekat['direction']} dari lokasi pengguna. "
+            ? "Titik panas terdekat {$terdekat['distance']} km ke arah {$terdekat['direction']} dari pusat kota. "
             : 'Tidak ada titik panas terdeteksi dalam 24 jam terakhir. ';
 
         $kec = $ringkasan['kecenderungan'] ?? null;
@@ -151,7 +158,7 @@ class RecommendationService
 
         try {
             $res = Http::withHeaders(['x-goog-api-key' => $key])
-                ->timeout(15)
+                ->timeout(7)->connectTimeout(3)
                 ->post("https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent", [
                     'contents' => [['parts' => [['text' => $prompt]]]],
                     'generationConfig' => ['maxOutputTokens' => 800, 'temperature' => 0.4],
@@ -171,7 +178,7 @@ class RecommendationService
             $res = Http::withHeaders([
                 'x-api-key' => $key,
                 'anthropic-version' => '2023-06-01',
-            ])->timeout(15)->post('https://api.anthropic.com/v1/messages', [
+            ])->timeout(7)->connectTimeout(3)->post('https://api.anthropic.com/v1/messages', [
                 'model' => 'claude-haiku-4-5-20251001',
                 'max_tokens' => 300,
                 'messages' => [['role' => 'user', 'content' => $prompt]],

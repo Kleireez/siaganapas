@@ -1,59 +1,116 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# SiagaNapas
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**Pantau udara dan titik panas di sekitar Anda, lalu ketahui apa yang sebaiknya dilakukan.**
 
-## About Laravel
+SiagaNapas adalah aplikasi web informasi lingkungan untuk warga Riau. Data kualitas udara, cuaca, dan titik panas satelit diambil dari sumber terbuka, diolah, lalu diterjemahkan menjadi informasi yang mudah dipahami dan saran tindakan yang jelas.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Web (live):** [ISI: https://alamat-web-kamu]
+- **Subtema lomba:** Sustainable Environment & Green Technology
+- **Lomba:** Web Development Competition FESTRA 2026
+- **Tim:** [ISI: nama ketua, anggota, kampus]
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Masalah yang diselesaikan
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Data kualitas udara dan titik panas sudah tersedia secara terbuka, tetapi bentuknya angka, koordinat, dan istilah teknis yang sulit dipahami warga. Akibatnya orang sulit menjawab pertanyaan sederhana: _"Apakah aman keluar rumah hari ini, dan seberapa dekat titik panas dari tempat saya?"_
 
-## Learning Laravel
+SiagaNapas menjawabnya dengan satu halaman: kondisi udara, tren hari ini, peta titik panas, dan saran tindakan.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Fitur
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- **Kondisi udara terkini**: AQI, kategori, PM2.5, PM10, dan gas lain, lengkap dengan skala warna.
+- **Tren AQI hari ini** per 2 jam, serta jam terbaik dan terburuk.
+- **Prakiraan 3 hari**: cuaca dan rata-rata AQI harian.
+- **Peta titik panas** (OpenStreetMap) dengan tingkat kepercayaan: tinggi, sedang, rendah.
+- **Lokasi saya**: menghitung jarak dan arah titik panas terdekat dari posisi pengguna. Perhitungan terjadi di browser, koordinat tidak dikirim ke server.
+- **Saran tindakan** per kondisi udara. Saran dibuat AI (Gemini atau Claude) jika tersedia, dan otomatis memakai aturan baku jika AI gagal atau tidak dikonfigurasi.
+- **Panduan per kelompok** (anak-anak, lansia, dan lainnya).
+- **12 kota/kabupaten di Riau** lewat dropdown.
+- **Transparansi data**: halaman menampilkan sumber dan waktu pembaruan tiap data.
+- **Mobile-friendly** dan tetap tampil dengan data terakhir atau data contoh saat API gagal (ditandai jelas sebagai "Data contoh").
 
-## Laravel Sponsors
+## Sumber data
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+| Data                 | Sumber                                                                   | Pembaruan                                        |
+| -------------------- | ------------------------------------------------------------------------ | ------------------------------------------------ |
+| Kualitas udara, tren | [Open-Meteo Air Quality](https://open-meteo.com/en/docs/air-quality-api) | tiap jam                                         |
+| Cuaca, prakiraan     | [Open-Meteo Forecast](https://open-meteo.com/en/docs)                    | tiap jam                                         |
+| Titik panas          | [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/) (VIIRS SNPP NRT)     | beberapa kali sehari, mengikuti lintasan satelit |
+| Peta                 | OpenStreetMap + Leaflet                                                  | -                                                |
 
-### Premium Partners
+## Catatan batas data
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Aplikasi ini sengaja berhati-hati dalam menyampaikan informasi:
 
-## Contributing
+- **Titik panas bukan berarti pasti kebakaran.** Satelit mendeteksi area bersuhu tinggi.
+- Titik panas **tidak disebut sebagai penyebab asap**.
+- Nama kabupaten/kota pada titik panas adalah **perkiraan** berdasarkan pusat wilayah terdekat, bukan batas administrasi resmi.
+- Data satelit bisa terlambat beberapa jam dan tidak selalu menangkap setiap kejadian.
+- Jarak dihitung dari pusat kota terpilih, atau dari lokasi pengguna jika fitur Lokasi saya dipakai (hanya dari titik yang ditampilkan di peta).
+- Nilai yang tidak disediakan API ditampilkan sebagai "tidak tersedia", tidak dikarang.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Teknologi
 
-## Code of Conduct
+- Laravel 12, PHP 8.2+
+- Blade, CSS dan JavaScript tanpa framework front-end
+- Leaflet 1.9 dan OpenStreetMap
+- Tanpa database. Data diambil dari API lalu disimpan sementara di cache (udara dan cuaca 10 menit, tren 30 menit, titik panas 15 menit, saran AI 30 menit), dengan cadangan data sukses terakhir jika API gagal.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Menjalankan di komputer lokal
 
-## Security Vulnerabilities
+Prasyarat: PHP 8.2+, Composer.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+git clone [ISI: URL repo GitHub kamu]
+cd [ISI: nama folder repo]
 
-## License
+composer install
+cp .env.example .env
+php artisan key:generate
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Isi variabel di `.env` (lihat tabel di bawah), lalu:
+
+```bash
+php artisan serve
+```
+
+Buka http://127.0.0.1:8000. Untuk memilih kota: `http://127.0.0.1:8000/?kota=kampar`.
+
+## Variabel lingkungan
+
+| Variabel            | Wajib             | Keterangan                                                                  |
+| ------------------- | ----------------- | --------------------------------------------------------------------------- |
+| `APP_KEY`           | ya                | dibuat lewat `php artisan key:generate`                                     |
+| `FIRMS_MAP_KEY`     | untuk titik panas | key gratis dari NASA FIRMS (https://firms.modaps.eosdis.nasa.gov/api/area/) |
+| `GEMINI_API_KEY`    | tidak             | jika kosong dan `ANTHROPIC_API_KEY` juga kosong, saran memakai aturan baku  |
+| `ANTHROPIC_API_KEY` | tidak             | cadangan jika Gemini tidak diisi                                            |
+
+Open-Meteo tidak memerlukan API key.
+
+Pengaturan yang disarankan untuk produksi:
+
+```
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://alamat-web-kamu
+SESSION_DRIVER=cookie
+CACHE_STORE=file
+QUEUE_CONNECTION=sync
+LOG_CHANNEL=stderr
+```
+
+## Struktur singkat
+
+```
+app/Http/Controllers/HomeController.php    mengumpulkan data dan mengirim ke view
+app/Services/UdaraService.php              kualitas udara, tren, ringkasan
+app/Services/CuacaService.php              cuaca dan prakiraan
+app/Services/TitikPanasService.php         titik panas NASA FIRMS, jarak, arah
+app/Services/RecommendationService.php     saran (AI atau aturan)
+config/siaganapas.php                      daftar kota/kabupaten
+resources/views/home.blade.php             tampilan
+```
+
+## Penggunaan AI
+
+AI digunakan sebagai alat bantu pengembangan dan, secara opsional, untuk menyusun kalimat saran dari data aktual. Prompt membatasi AI agar tidak menambah angka atau fakta di luar data, tidak menyimpulkan penyebab asap, dan tidak memberi diagnosis medis. Seluruh tanggung jawab karya berada pada tim.
