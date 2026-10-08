@@ -20,12 +20,12 @@ class TitikPanasService
     private const HARI = 2;
 
     /**
-     * Semua titik panas di Riau (2 hari UTC).
+     * Semua titik panas di kotak area Riau (2 hari UTC), belum dikaitkan ke kota tertentu.
      * Array kosong kalau tidak ada, null kalau pemanggilan API gagal.
      */
     public function ambil(): ?array
     {
-        return Cache::remember('titik_panas_riau_v2', 900, function () {
+        return Cache::remember('titik_panas_riau_v3', 900, function () {
             $key = config('services.firms.key');
 
             if (! $key) {
@@ -73,19 +73,25 @@ class TitikPanasService
                 }
                 $t = array_combine($header, $nilai);
 
+                $lat = (float) $t['latitude'];
+                $lon = (float) $t['longitude'];
+
                 $jam = str_pad($t['acq_time'] ?? '0', 4, '0', STR_PAD_LEFT);
                 $ts = Carbon::parse(
                     ($t['acq_date'] ?? '1970-01-01').' '.substr($jam, 0, 2).':'.substr($jam, 2, 2),
                     'UTC'
                 )->timestamp;
+                $wib = Carbon::createFromTimestamp($ts, 'Asia/Jakarta');
 
                 $hasil[] = [
-                    'lat' => (float) $t['latitude'],
-                    'lon' => (float) $t['longitude'],
-                    'tgl' => $t['acq_date'] ?? null,
-                    'ts' => $ts, // waktu deteksi (UTC, epoch)
-                    'keyakinan' => $this->keyakinan($t['confidence'] ?? ''),
+                    'latitude' => $lat,
+                    'longitude' => $lon,
+                    'confidence' => $this->keyakinan($t['confidence'] ?? ''),
                     'frp' => (float) ($t['frp'] ?? 0),
+                    'location' => $this->wilayah($lat, $lon),
+                    'timestamp' => $ts,
+                    'datetime' => $wib->format('Y-m-d H:i:s'),
+                    'time_label' => $wib->format('H.i').' WIB',
                 ];
             }
 
@@ -94,10 +100,11 @@ class TitikPanasService
     }
 
     /**
-     * Titik panas 24 jam terakhir, diurutkan dari yang terdekat ke lokasi pengguna.
-     * Tiap titik ditambah jarak_km dan jam_wib. null = API gagal, [] = tidak ada titik.
+     * Titik panas 24 jam terakhir, diurutkan dari yang terdekat ke koordinat kota terpilih.
+     * Tiap titik ditambah distance (km) dan direction (arah dari kota ke titik).
+     * null = API gagal, [] = tidak ada titik. $batas = 0 berarti tanpa batas.
      */
-    public function dekatDari(float $lat, float $lon, int $radiusKm = 0, int $batas = 60): ?array
+    public function dekatDari(float $lat, float $lon, int $radiusKm = 0, int $batas = 0): ?array
     {
         $semua = $this->ambil();
         if ($semua === null) {
@@ -107,16 +114,40 @@ class TitikPanasService
         $batasWaktu = now()->subHours(24)->timestamp;
 
         return collect($semua)
-            ->filter(fn ($t) => $t['ts'] >= $batasWaktu)
+            ->filter(fn ($t) => $t['timestamp'] >= $batasWaktu)
             ->map(fn ($t) => $t + [
-                'jarak_km' => round($this->jarak($lat, $lon, $t['lat'], $t['lon']), 1),
-                'jam_wib' => Carbon::createFromTimestamp($t['ts'], 'Asia/Jakarta')->format('H:i'),
+                'distance' => round($this->jarak($lat, $lon, $t['latitude'], $t['longitude']), 1),
+                'direction' => $this->arah($lat, $lon, $t['latitude'], $t['longitude']),
             ])
-            ->when($radiusKm > 0, fn ($c) => $c->filter(fn ($t) => $t['jarak_km'] <= $radiusKm))
-            ->sortBy('jarak_km')
+            ->when($radiusKm > 0, fn ($c) => $c->filter(fn ($t) => $t['distance'] <= $radiusKm))
+            ->sortBy('distance')
             ->values()
-            ->take($batas)
+            ->when($batas > 0, fn ($c) => $c->take($batas))
             ->all();
+    }
+
+    /**
+     * Perkiraan wilayah: kabupaten/kota (dari config) yang pusatnya paling dekat dengan titik.
+     * Ini PERKIRAAN, bukan batas administrasi resmi. Lebih dari 150 km dari semua pusat = "Perbatasan Riau".
+     */
+    private function wilayah(float $lat, float $lon): string
+    {
+        $terdekat = null;
+        $min = INF;
+
+        foreach (config('siaganapas.cities', []) as $kota) {
+            $j = $this->jarak($lat, $lon, $kota['lat'], $kota['lon']);
+            if ($j < $min) {
+                $min = $j;
+                $terdekat = $kota;
+            }
+        }
+
+        if (! $terdekat || $min > 150) {
+            return 'Perbatasan Riau';
+        }
+
+        return trim(($terdekat['jenis'] ?? '').' '.$terdekat['nama']);
     }
 
     // VIIRS memberi confidence l / n / h
@@ -137,5 +168,18 @@ class TitikPanasService
             + cos($lat1 * $p) * cos($lat2 * $p) * sin(($lon2 - $lon1) * $p / 2) ** 2;
 
         return 12742 * asin(sqrt($a));
+    }
+
+    // Arah mata angin dari titik 1 ke titik 2
+    private function arah(float $lat1, float $lon1, float $lat2, float $lon2): string
+    {
+        $p = M_PI / 180;
+        $y = sin(($lon2 - $lon1) * $p) * cos($lat2 * $p);
+        $x = cos($lat1 * $p) * sin($lat2 * $p) - sin($lat1 * $p) * cos($lat2 * $p) * cos(($lon2 - $lon1) * $p);
+        $derajat = fmod(atan2($y, $x) / $p + 360, 360);
+
+        $nama = ['utara', 'timur laut', 'timur', 'tenggara', 'selatan', 'barat daya', 'barat', 'barat laut'];
+
+        return $nama[(int) round($derajat / 45) % 8];
     }
 }
