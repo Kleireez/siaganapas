@@ -32,9 +32,9 @@ SiagaNapas menjawabnya dengan satu halaman: kondisi udara, tren hari ini, peta t
 
 | Data                 | Sumber                                                                   | Pembaruan                                        |
 | -------------------- | ------------------------------------------------------------------------ | ------------------------------------------------ |
-| Kualitas udara, tren | [Open-Meteo Air Quality](https://open-meteo.com/en/docs/air-quality-api) | tiap jam                                         |
-| Cuaca, prakiraan     | [Open-Meteo Forecast](https://open-meteo.com/en/docs)                    | tiap jam                                         |
-| Titik panas          | [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/) (VIIRS SNPP NRT)     | beberapa kali sehari, mengikuti lintasan satelit |
+| Kualitas udara, tren | [Open-Meteo Air Quality](https://open-meteo.com/en/docs/air-quality-api) | Tiap jam                                         |
+| Cuaca, prakiraan     | [Open-Meteo Forecast](https://open-meteo.com/en/docs)                    | Tiap jam                                         |
+| Titik panas          | [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/) (VIIRS SNPP NRT)     | Beberapa kali sehari, mengikuti lintasan satelit |
 | Peta                 | OpenStreetMap + Leaflet                                                  | -                                                |
 
 ## Catatan batas data
