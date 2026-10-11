@@ -68,10 +68,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="SiagaNapas: pantau kualitas udara, cuaca, dan titik panas di Riau.">
 <meta name="theme-color" content="#075985">
-<link rel="icon" href="{{ asset('favicon.ico') }}" sizes="48x48">
-<link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
-<link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
-<title>SiagaNapas – Pantau Udara & Titik Panas · {{ $infoKota['nama'] }}</title>
+<link rel="icon" href="{{ asset('favicon.ico') }}?v=2" type="image/x-icon">
+<link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}?v=2"><title>SiagaNapas – Pantau Udara & Titik Panas · {{ $infoKota['nama'] }}</title>
 {{-- Font tidak memblokir render; sebelum termuat dipakai font sistem --}}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -83,7 +81,7 @@
 :root{--bg:#F3F7FA;--fg:#172B3A;--mut:#64748b;--mut2:#94a3b8;--line:#D7E3EA;--riau:#075985;--riau6:#087EA4;--riau5:#EAF6FB;--riau1:#D8F0F7;
 --sans:'DM Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;--disp:'Manrope','DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif}
 *{box-sizing:border-box;margin:0}
-html{scroll-behavior:smooth;scroll-padding-top:5rem;-webkit-text-size-adjust:100%}
+html{scroll-behavior:smooth;scroll-padding-top:5rem;-webkit-text-size-adjust:100%;overflow-x:hidden;max-width:100%}
 body{font-family:var(--sans);background:var(--bg);color:var(--fg);line-height:1.5;padding-bottom:5rem;overflow-x:hidden}
 a{color:inherit;text-decoration:none}button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
 h1,h2,h3,.disp{font-family:var(--disp);font-weight:800}
@@ -118,8 +116,9 @@ h2{font-size:1.125rem;line-height:1.3}
 .cmenu a:hover,.cmenu a.cur{background:var(--riau5)}.cmenu a.cur{color:var(--riau)}.cmenu em{font-style:normal;font-size:11px;font-weight:600;color:var(--mut2)}
 .warn{background:#fffbeb;border-bottom:1px solid #fde68a;color:#92400e;font-size:.8rem;padding:.5rem 0}
 /* layout */
-main{padding:1.75rem 0;display:grid;gap:2rem}
-.grid{display:grid;gap:1.25rem;min-width:0}
+main{padding:1.75rem 0;display:grid;gap:2rem;grid-template-columns:minmax(0,1fr)}
+main>*{min-width:0}
+.grid{display:grid;gap:1.25rem;min-width:0;grid-template-columns:minmax(0,1fr)}
 .defer{content-visibility:auto;contain-intrinsic-size:auto 420px}
 /* status warna: dipilih lewat level_key dari backend */
 .lv-netral{--ac:#64748b;--sf:#f8fafc;--tx:#475569;--ln:#e2e8f0}
