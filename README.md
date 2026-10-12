@@ -14,7 +14,9 @@ SiagaNapas adalah aplikasi web yang merangkum kualitas udara, cuaca, dan titik p
 
 ## Latar belakang
 
-Setiap musim kemarau, kabut asap dari kebakaran hutan dan lahan menyelimuti Riau. Warga membutuhkan jawaban cepat: seberapa parah udara hari ini, aman keluar rumah atau tidak, dan dari mana asapnya. Informasinya ada, tetapi tersebar dan sering memakai istilah teknis. SiagaNapas mengumpulkannya dalam satu halaman dengan bahasa sehari-hari.
+Asap kembali menyelimuti Riau, bahkan sekolah dan kampus sampai diliburkan atau dialihkan ke daring. Di saat seperti ini, warga bingung: seberapa parah udara hari ini, aman keluar rumah atau tidak, dan dari mana asapnya. Informasinya ada, tetapi tersebar dan sulit dipahami.
+
+SiagaNapas mengumpulkannya dalam satu halaman dengan bahasa sehari-hari, dan menerjemahkannya menjadi saran yang bisa langsung ditindaklanjuti. Keputusan libur sekolah tetap wewenang pemerintah; SiagaNapas melengkapinya dengan informasi di tingkat warga.
 
 ## Fitur utama
 
@@ -87,9 +89,9 @@ FIRMS_MAP_KEY=isi_dengan_key_kamu
 
 ## Tim
 
-- [Nama Ketua] - [Perguruan Tinggi]
-- [Nama Anggota 1]
-- [Nama Anggota 2]
+- Egi Frizi Manda - Politeknik Caltex Riau
+- Farel Yuliansa
+- Muhammad Hanif
 
 ## Lisensi
 
