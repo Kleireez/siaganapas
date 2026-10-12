@@ -226,7 +226,7 @@ footer{border-top:1px solid #e2e8f0;background:#fff;font-size:.75rem;color:var(-
  .why{grid-template-columns:repeat(3,1fr)}.tips{}.rec .top2{flex-direction:row;justify-content:space-between}
 }
 @media(min-width:768px){
- body{padding-bottom:0}.bnav{display:none}main{padding:2.5rem 0}
+ footer{padding-bottom:0}.bnav{display:none}main{padding:2.5rem 0}
  .g-sum{grid-template-columns:1.2fr .8fr}.g-eq{grid-template-columns:1fr 1fr}.tips.on{grid-template-columns:repeat(3,1fr)}
  footer .wrap{flex-direction:row;justify-content:space-between;align-items:center}.src-row{flex-direction:row!important;align-items:center!important;justify-content:space-between}
 }
