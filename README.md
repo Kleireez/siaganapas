@@ -1,116 +1,96 @@
 # SiagaNapas
 
-**Pantau udara dan titik panas di sekitar Anda, lalu ketahui apa yang sebaiknya dilakukan.**
+**Pantau udara & titik panas Riau dalam satu tampilan.**
 
-SiagaNapas adalah aplikasi web informasi lingkungan untuk warga Riau. Data kualitas udara, cuaca, dan titik panas satelit diambil dari sumber terbuka, diolah, lalu diterjemahkan menjadi informasi yang mudah dipahami dan saran tindakan yang jelas.
+SiagaNapas adalah aplikasi web yang merangkum kualitas udara, cuaca, dan titik panas di Riau, lalu menerjemahkannya menjadi saran yang mudah dipahami dan langsung bisa ditindaklanjuti warga.
 
-- **Web (live):** [ISI: https://alamat-web-kamu]
-- **Subtema lomba:** Sustainable Environment & Green Technology
-- **Lomba:** Web Development Competition FESTRA 2026
-- **Tim:** [ISI: nama ketua, anggota, kampus]
+🔗 **Website:** https://www.siaganapas.web.id
 
-## Masalah yang diselesaikan
+> Dibuat untuk **Web Development Competition FESTRA 2026**
+> Tema: _Building Intelligent Web Solutions for Future Society_
+> Subtema: _Sustainable Environment & Green Technology_
 
-Data kualitas udara dan titik panas sudah tersedia secara terbuka, tetapi bentuknya angka, koordinat, dan istilah teknis yang sulit dipahami warga. Akibatnya orang sulit menjawab pertanyaan sederhana: _"Apakah aman keluar rumah hari ini, dan seberapa dekat titik panas dari tempat saya?"_
+---
 
-SiagaNapas menjawabnya dengan satu halaman: kondisi udara, tren hari ini, peta titik panas, dan saran tindakan.
+## Latar belakang
 
-## Fitur
+Setiap musim kemarau, kabut asap dari kebakaran hutan dan lahan menyelimuti Riau. Warga membutuhkan jawaban cepat: seberapa parah udara hari ini, aman keluar rumah atau tidak, dan dari mana asapnya. Informasinya ada, tetapi tersebar dan sering memakai istilah teknis. SiagaNapas mengumpulkannya dalam satu halaman dengan bahasa sehari-hari.
 
-- **Kondisi udara terkini**: AQI, kategori, PM2.5, PM10, dan gas lain, lengkap dengan skala warna.
-- **Tren AQI hari ini** per 2 jam, serta jam terbaik dan terburuk.
-- **Prakiraan 3 hari**: cuaca dan rata-rata AQI harian.
-- **Peta titik panas** (OpenStreetMap) dengan tingkat kepercayaan: tinggi, sedang, rendah.
-- **Lokasi saya**: menghitung jarak dan arah titik panas terdekat dari posisi pengguna. Perhitungan terjadi di browser, koordinat tidak dikirim ke server.
-- **Saran tindakan** per kondisi udara. Saran dibuat AI (Gemini atau Claude) jika tersedia, dan otomatis memakai aturan baku jika AI gagal atau tidak dikonfigurasi.
-- **Panduan per kelompok** (anak-anak, lansia, dan lainnya).
-- **12 kota/kabupaten di Riau** lewat dropdown.
-- **Transparansi data**: halaman menampilkan sumber dan waktu pembaruan tiap data.
-- **Mobile-friendly** dan tetap tampil dengan data terakhir atau data contoh saat API gagal (ditandai jelas sebagai "Data contoh").
+## Fitur utama
 
-## Sumber data
-
-| Data                 | Sumber                                                                   | Pembaruan                                        |
-| -------------------- | ------------------------------------------------------------------------ | ------------------------------------------------ |
-| Kualitas udara, tren | [Open-Meteo Air Quality](https://open-meteo.com/en/docs/air-quality-api) | Tiap jam                                         |
-| Cuaca, prakiraan     | [Open-Meteo Forecast](https://open-meteo.com/en/docs)                    | Tiap jam                                         |
-| Titik panas          | [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/) (VIIRS SNPP NRT)     | Beberapa kali sehari, mengikuti lintasan satelit |
-| Peta                 | OpenStreetMap + Leaflet                                                  | -                                                |
-
-## Catatan batas data
-
-Aplikasi ini sengaja berhati-hati dalam menyampaikan informasi:
-
-- **Titik panas bukan berarti pasti kebakaran.** Satelit mendeteksi area bersuhu tinggi.
-- Titik panas **tidak disebut sebagai penyebab asap**.
-- Nama kabupaten/kota pada titik panas adalah **perkiraan** berdasarkan pusat wilayah terdekat, bukan batas administrasi resmi.
-- Data satelit bisa terlambat beberapa jam dan tidak selalu menangkap setiap kejadian.
-- Jarak dihitung dari pusat kota terpilih, atau dari lokasi pengguna jika fitur Lokasi saya dipakai (hanya dari titik yang ditampilkan di peta).
-- Nilai yang tidak disediakan API ditampilkan sebagai "tidak tersedia", tidak dikarang.
+- **Indeks kualitas udara (AQI) terkini** dengan skala visual dan warna yang menyesuaikan tingkat bahaya
+- **Data per kabupaten/kota** di Riau
+- **Rekomendasi aktivitas** lengkap dengan alasannya
+- **Tren AQI per 2 jam** dan **prakiraan 3 hari**, termasuk waktu dengan udara terbaik
+- **Kondisi saat ini**: PM2.5, PM10, CO, NO₂, SO₂, suhu, kelembapan, angin, jarak pandang
+- **Peta titik panas interaktif** (hingga 150 titik), dibedakan warna berdasarkan tingkat kepercayaan, dengan detail jarak, arah, dan FRP
+- **Lokasi saya**: menghitung titik panas terdekat dari posisi pengguna. Perhitungan dilakukan **sepenuhnya di browser**, lokasi **tidak dikirim ke server**
+- **Panduan per kelompok**: anak-anak, ibu hamil, lansia, pengendara, dan orang sensitif terhadap asap
+- **Transparansi data**: status koneksi dan kesegaran tiap sumber ditampilkan, serta catatan bahwa titik panas belum tentu berarti kebakaran
+- **Responsif** dan nyaman dibuka dari ponsel
 
 ## Teknologi
 
-- Laravel 12, PHP 8.2+
-- Blade, CSS dan JavaScript tanpa framework front-end
-- Leaflet 1.9 dan OpenStreetMap
-- Tanpa database. Data diambil dari API lalu disimpan sementara di cache (udara dan cuaca 10 menit, tren 30 menit, titik panas 15 menit, saran AI 30 menit), dengan cadangan data sukses terakhir jika API gagal.
+| Bagian     | Teknologi                                        |
+| ---------- | ------------------------------------------------ |
+| Backend    | Laravel (PHP), Blade                             |
+| Frontend   | HTML, CSS, JavaScript                            |
+| Peta       | Leaflet + OpenStreetMap (dimuat saat dibutuhkan) |
+| Deployment | Railway                                          |
+
+## Sumber data
+
+- [Open-Meteo](https://open-meteo.com/): kualitas udara, cuaca, dan prakiraan
+- [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/): titik panas satelit
+
+Tidak ada data yang diisi manual. Jika salah satu sumber gagal dimuat, halaman menampilkan keterangan dan tetap berfungsi.
 
 ## Menjalankan di komputer lokal
 
-Prasyarat: PHP 8.2+, Composer.
+Prasyarat: PHP, Composer, dan koneksi internet.
 
 ```bash
-git clone [ISI: URL repo GitHub kamu]
-cd [ISI: nama folder repo]
+# 1. Clone repository
+git clone https://github.com/Kleireez/siaganapas.git
+cd siaganapas
 
+# 2. Pasang dependensi
 composer install
+
+# 3. Siapkan konfigurasi
 cp .env.example .env
 php artisan key:generate
-```
 
-Isi variabel di `.env` (lihat tabel di bawah), lalu:
+# 4. Isi API key di file .env (lihat bagian di bawah)
 
-```bash
+# 5. Jalankan
 php artisan serve
 ```
 
-Buka http://127.0.0.1:8000. Untuk memilih kota: `http://127.0.0.1:8000/?kota=kampar`.
+Buka http://127.0.0.1:8000
 
-## Variabel lingkungan
+### Konfigurasi `.env`
 
-| Variabel            | Wajib             | Keterangan                                                                  |
-| ------------------- | ----------------- | --------------------------------------------------------------------------- |
-| `APP_KEY`           | ya                | dibuat lewat `php artisan key:generate`                                     |
-| `FIRMS_MAP_KEY`     | untuk titik panas | key gratis dari NASA FIRMS (https://firms.modaps.eosdis.nasa.gov/api/area/) |
-| `GEMINI_API_KEY`    | tidak             | jika kosong dan `ANTHROPIC_API_KEY` juga kosong, saran memakai aturan baku  |
-| `ANTHROPIC_API_KEY` | tidak             | cadangan jika Gemini tidak diisi                                            |
+Isi kunci API yang diperlukan, misalnya untuk NASA FIRMS:
 
-Open-Meteo tidak memerlukan API key.
-
-Pengaturan yang disarankan untuk produksi:
-
-```
-APP_ENV=production
-APP_DEBUG=false
-APP_URL=https://alamat-web-kamu
-SESSION_DRIVER=cookie
-CACHE_STORE=file
-QUEUE_CONNECTION=sync
-LOG_CHANNEL=stderr
+```env
+FIRMS_MAP_KEY=isi_dengan_key_kamu
 ```
 
-## Struktur singkat
+> File `.env` tidak disertakan di repository. Jangan pernah mengunggah API key ke GitHub.
 
-```
-app/Http/Controllers/HomeController.php    mengumpulkan data dan mengirim ke view
-app/Services/UdaraService.php              kualitas udara, tren, ringkasan
-app/Services/CuacaService.php              cuaca dan prakiraan
-app/Services/TitikPanasService.php         titik panas NASA FIRMS, jarak, arah
-app/Services/RecommendationService.php     saran (AI atau aturan)
-config/siaganapas.php                      daftar kota/kabupaten
-resources/views/home.blade.php             tampilan
-```
+## Catatan penting
 
-## Penggunaan AI
+- Data satelit dapat terlambat beberapa jam dan tidak selalu menangkap setiap kebakaran.
+- Titik panas **belum tentu berarti kebakaran**; ini hanya penanda area bersuhu tinggi yang perlu diperhatikan.
+- SiagaNapas **melengkapi**, bukan menggantikan, informasi dan keputusan resmi pemerintah.
 
-AI digunakan sebagai alat bantu pengembangan dan, secara opsional, untuk menyusun kalimat saran dari data aktual. Prompt membatasi AI agar tidak menambah angka atau fakta di luar data, tidak menyimpulkan penyebab asap, dan tidak memberi diagnosis medis. Seluruh tanggung jawab karya berada pada tim.
+## Tim
+
+- [Nama Ketua] - [Perguruan Tinggi]
+- [Nama Anggota 1]
+- [Nama Anggota 2]
+
+## Lisensi
+
+Hak cipta karya tetap milik tim pembuat.
