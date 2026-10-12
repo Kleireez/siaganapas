@@ -68,8 +68,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="SiagaNapas: pantau kualitas udara, cuaca, dan titik panas di Riau.">
 <meta name="theme-color" content="#075985">
-<link rel="icon" href="{{ asset('favicon.ico') }}?v=2" type="image/x-icon">
-<link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}?v=2"><title>SiagaNapas – Pantau Udara & Titik Panas · {{ $infoKota['nama'] }}</title>
+<link rel="icon" href="/favicon.ico?v=3" type="image/x-icon">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=3"><title>SiagaNapas – Pantau Udara & Titik Panas · {{ $infoKota['nama'] }}</title>
 {{-- Font tidak memblokir render; sebelum termuat dipakai font sistem --}}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
